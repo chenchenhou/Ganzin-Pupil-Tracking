@@ -114,4 +114,7 @@ for epoch in range(1, config["num_epochs"] + 1):
     val_avg_loss = sum(val_loss) / len(val_loss)
     print(f"Validation loss = {val_avg_loss}")
     path_name = f"epoch{epoch}.pth"
+    if os.path.exists(config["save_path"]) == False:
+        print("Creating checkpoints directory...")
+        os.mkdir(config["save_path"])
     torch.save(deeplabv3.state_dict(), os.path.join(config["save_path"], path_name))
