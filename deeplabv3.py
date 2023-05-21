@@ -37,26 +37,25 @@ S2 = glob.glob("dataset/S2/**/*.png", recursive=True) + glob.glob("dataset/S2/**
 S3 = glob.glob("dataset/S3/**/*.png", recursive=True) + glob.glob("dataset/S3/**/*.jpg", recursive=True)
 S4 = glob.glob("dataset/S4/**/*.png", recursive=True) + glob.glob("dataset/S4/**/*.jpg", recursive=True)
 dataWithGT = S1 + S2 + S3 + S4
-print(len(dataWithGT))
 
 # These transforms are meant for deeplabv3 in torchvision.models, feel free to modify them.
 train_transform = transforms.Compose(
     [
-        transforms.Resize((520, 520)),
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5], std=[0.5]),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
 valid_transform = transforms.Compose(
     [
-        transforms.Resize((520, 520)),
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5], std=[0.5]),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
 transform_label = transforms.Compose(
     [
-        transforms.Resize((520, 520)),
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
     ]
 )
@@ -65,16 +64,15 @@ pupil_valid_data = PupilDataSetwithGT(dataWithGT, transform=valid_transform, tra
 
 """# Configuration"""
 
-config = {"num_epochs": 1, "lr": 0.001, "batch_size": 4, "save_path": "./checkpoints/"}
+config = {"num_epochs": 50, "lr": 0.001, "batch_size": 4, "save_path": "./checkpoints/"}
 
-pupil_trainloder = DataLoader(pupil_train_data, batch_size=config["batch_size"], shuffle=True)
+pupil_trainloader = DataLoader(pupil_train_data, batch_size=config["batch_size"], shuffle=True)
 pupil_validloader = DataLoader(pupil_valid_data, batch_size=config["batch_size"], shuffle=False)
 
 """# Training and Validation"""
-
-deeplabv3 = models.segmentation.deeplabv3_resnet50(weights="DEFAULT", weights_backbone="ResNet50_Weights.DEFAULT")
-deeplabv3.backbone.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3))
-deeplabv3.classifier[-1] = nn.Conv2d(256, 2, kernel_size=(1, 1), stride=(1, 1))
+# We can use different deeplabv3 architecture
+deeplabv3 = torch.hub.load("pytorch/vision:v0.10.0", "deeplabv3_resnet50", pretrained=True)
+deeplabv3.classifier[4] = nn.Conv2d(256, 2, kernel_size=(1, 1), stride=(1, 1))
 deeplabv3 = deeplabv3.to(device)
 
 # print(deeplabv3)
@@ -89,12 +87,11 @@ for epoch in range(1, config["num_epochs"] + 1):
     print(f"Epoch {epoch}...")
     train_loss = []
     val_loss = []
-    for img, label in pupil_trainloder:
+    for img, label in pupil_trainloader:
         img = img.to(device)
         label = label.to(device)
         output = deeplabv3(img)["out"]
-        pred = torch.argmax(output, dim=1)
-        loss = criterion(label, pred)
+        loss = criterion(output, torch.squeeze(label.long()))
         optimizer.zero_grad()
         loss.requires_grad_(True)
         loss.backward()
@@ -110,13 +107,16 @@ for epoch in range(1, config["num_epochs"] + 1):
             img = img.to(device)
             label = label.to(device)
             output = deeplabv3(img)["out"]
-            pred = torch.argmax(output, dim=1)
-            loss = criterion(label, pred)
+            loss = criterion(output, torch.squeeze(label.long()))
             val_loss.append(loss)
     val_avg_loss = sum(val_loss) / len(val_loss)
     print(f"Validation Loss = {val_avg_loss}")
     wandb.log({"Validation Loss": val_avg_loss})
     path_name = f"epoch{epoch}.pth"
-    torch.save(deeplabv3.state_dict(), os.path.join(config["save_path"], path_name))
+    if os.path.exists(config["save_path"]) == False:
+        print("Creating checkpoints directory...")
+        os.mkdir(config["save_path"])
+    if epoch % 10 == 0:
+        torch.save(deeplabv3.state_dict(), os.path.join(config["save_path"], path_name))
 
 wandb.finish()
