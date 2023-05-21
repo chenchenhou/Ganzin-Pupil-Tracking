@@ -36,7 +36,7 @@ class PupilDataSetwithGT(Dataset):
         self.mode = mode
         self.labels = [im for im in self.data if im.endswith('png')]
         self.images = [im for im in self.data if im.endswith('jpg')]
-
+        self.labels = read_masks(self.labels)
         # This is only a naive way to separate training images and validation images, feel free to modify it.
         sep = 5
         if self.mode == "train":
