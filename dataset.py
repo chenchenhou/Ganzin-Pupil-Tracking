@@ -13,6 +13,20 @@ import cv2
 from tqdm import tqdm
 import matplotlib
 
+def read_masks(file_list):
+    '''
+    Read masks from directory and tranform to categorical
+    '''
+    n_masks = len(file_list)
+    masks = np.empty((n_masks, 480, 640))
+
+    for i, file in enumerate(file_list):
+        mask = Image.open(file).convert('L')
+        mask = np.array(mask)
+        mask = (mask > 0).astype(int)
+        masks[i] = mask
+
+    return masks
 
 class PupilDataSetwithGT(Dataset):
     def __init__(self, data, transform = None, transform_label = None, mode = 'train'):
@@ -22,7 +36,7 @@ class PupilDataSetwithGT(Dataset):
         self.mode = mode
         self.labels = [im for im in self.data if im.endswith('png')]
         self.images = [im for im in self.data if im.endswith('jpg')]
-
+        self.labels = read_masks(self.labels)
         # This is only a naive way to separate training images and validation images, feel free to modify it.
         sep = 5
         if self.mode == 'train':
@@ -42,6 +56,6 @@ class PupilDataSetwithGT(Dataset):
         if self.mode == 'test':
             label = -1
         else:
-            label = Image.open(self.labels[idx]).convert('L')
+            label = self.labels[idx]
             label = self.transform_label(label)
         return img, label
