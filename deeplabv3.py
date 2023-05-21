@@ -1,17 +1,18 @@
-import torch
-import torch.nn as nn
-import numpy as np
-from PIL import Image
 import os
+import cv2
+import glob
+import torch
+import wandb
+import matplotlib
+import numpy as np
+import torch.nn as nn
+from tqdm import tqdm
+from PIL import Image
 import matplotlib.pyplot as plt
 import torchvision.models as models
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from natsort import natsorted
-import glob
-import cv2
-from tqdm import tqdm
-import matplotlib
 from dataset import PupilDataSetwithGT
 
 
@@ -62,9 +63,7 @@ transform_label = transforms.Compose(
 pupil_train_data = PupilDataSetwithGT(dataWithGT, transform=train_transform, transform_label=transform_label)
 pupil_valid_data = PupilDataSetwithGT(dataWithGT, transform=valid_transform, transform_label=transform_label, mode="val")
 
-"""# Configuration
-
-"""
+"""# Configuration"""
 
 config = {"num_epochs": 1, "lr": 0.001, "batch_size": 4, "save_path": "./checkpoints/"}
 
@@ -78,10 +77,12 @@ deeplabv3.backbone.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), p
 deeplabv3.classifier[-1] = nn.Conv2d(256, 2, kernel_size=(1, 1), stride=(1, 1))
 deeplabv3 = deeplabv3.to(device)
 
-print(deeplabv3)
+# print(deeplabv3)
 
 optimizer = torch.optim.Adam(deeplabv3.parameters(), lr=config["lr"])
 criterion = torch.nn.CrossEntropyLoss()
+
+wandb.init(project="Ganzin Pupil Tracking")
 
 for epoch in range(1, config["num_epochs"] + 1):
     deeplabv3.train()
@@ -100,7 +101,8 @@ for epoch in range(1, config["num_epochs"] + 1):
         optimizer.step()
         train_loss.append(loss.item())
     train_avg_loss = sum(train_loss) / len(train_loss)
-    print(f"Training loss = {train_avg_loss}")
+    print(f"Training Loss = {train_avg_loss}")
+    wandb.log({"Training Loss": train_avg_loss})
 
     deeplabv3.eval()
     with torch.no_grad():
@@ -112,6 +114,9 @@ for epoch in range(1, config["num_epochs"] + 1):
             loss = criterion(label, pred)
             val_loss.append(loss)
     val_avg_loss = sum(val_loss) / len(val_loss)
-    print(f"Validation loss = {val_avg_loss}")
+    print(f"Validation Loss = {val_avg_loss}")
+    wandb.log({"Validation Loss": val_avg_loss})
     path_name = f"epoch{epoch}.pth"
     torch.save(deeplabv3.state_dict(), os.path.join(config["save_path"], path_name))
+
+wandb.finish()

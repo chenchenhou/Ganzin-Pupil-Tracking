@@ -1,17 +1,17 @@
-import torch
-import torch.nn as nn
-import numpy as np
-from PIL import Image
 import os
+import cv2
+import glob
+import torch
+import matplotlib
+import numpy as np
+import torch.nn as nn
+from tqdm import tqdm
+from PIL import Image
 import matplotlib.pyplot as plt
 import torchvision.models as models
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from natsort import natsorted
-import glob
-import cv2
-from tqdm import tqdm
-import matplotlib
 
 
 class PupilDataSetwithGT(Dataset):
