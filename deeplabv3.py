@@ -55,6 +55,7 @@ valid_transform = transforms.Compose(
 )
 transform_label = transforms.Compose(
     [
+        transforms.ToPILImage(),
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
     ]
@@ -72,6 +73,12 @@ pupil_validloader = DataLoader(pupil_valid_data, batch_size=config["batch_size"]
 """# Training and Validation"""
 # We can use different deeplabv3 architecture
 deeplabv3 = torch.hub.load("pytorch/vision:v0.10.0", "deeplabv3_resnet50", pretrained=True)
+
+# Freeze the ResNet backbone, comment this for-loop if we want to train the whole network
+for name, param in deeplabv3.named_parameters():
+    if 'backbone' in name:
+        param.requires_grad = False
+
 deeplabv3.classifier[4] = nn.Conv2d(256, 2, kernel_size=(1, 1), stride=(1, 1))
 deeplabv3 = deeplabv3.to(device)
 
@@ -93,7 +100,6 @@ for epoch in range(1, config["num_epochs"] + 1):
         output = deeplabv3(img)["out"]
         loss = criterion(output, torch.squeeze(label.long()))
         optimizer.zero_grad()
-        loss.requires_grad_(True)
         loss.backward()
         optimizer.step()
         train_loss.append(loss.item())
