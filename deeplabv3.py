@@ -64,7 +64,7 @@ pupil_valid_data = PupilDataSetwithGT(dataWithGT, transform=valid_transform, tra
 
 """# Configuration"""
 
-config = {"num_epochs": 50, "lr": 0.001, "batch_size": 4, "save_path": "./checkpoints/"}
+config = {"num_epochs": 30, "lr": 0.001, "batch_size": 4, "save_path": "./checkpoints/"}
 
 pupil_trainloader = DataLoader(pupil_train_data, batch_size=config["batch_size"], shuffle=True)
 pupil_validloader = DataLoader(pupil_valid_data, batch_size=config["batch_size"], shuffle=False)
@@ -84,7 +84,7 @@ wandb.init(project="Ganzin Pupil Tracking")
 
 for epoch in range(1, config["num_epochs"] + 1):
     deeplabv3.train()
-    print(f"Epoch {epoch}...")
+    print(f"Epoch {epoch}/{config['num_epochs']}")
     train_loss = []
     val_loss = []
     for img, label in pupil_trainloader:
