@@ -14,22 +14,6 @@ import torchvision.transforms as transforms
 from natsort import natsorted
 
 
-def read_masks(file_list):
-    """
-    Read masks from directory and tranform to categorical
-    """
-    n_masks = len(file_list)
-    masks = np.empty((n_masks, 480, 640))
-
-    for i, file in enumerate(file_list):
-        mask = Image.open(file).convert("L")
-        mask = np.array(mask)
-        mask = (mask > 0).astype(int)
-        masks[i] = mask
-
-    return masks
-
-
 class PupilDataSetwithGT(Dataset):
     def __init__(self, data, transform=None, transform_label=None, mode="train"):
         self.data = data
@@ -49,8 +33,6 @@ class PupilDataSetwithGT(Dataset):
                 self.labels.append(labels_name[i])
                 self.images.append(images_name[i])
         del labels_name, images_name
-        if mode != "test":
-            self.labels = read_masks(self.labels)
         # This is only a naive way to separate training images and validation images, feel free to modify it.
         sep = 5
         if self.mode == "train":
@@ -69,6 +51,8 @@ class PupilDataSetwithGT(Dataset):
         if self.mode == "test":
             label = -1
         else:
-            label = self.labels[idx].astype(np.uint8)
+            label = Image.open(self.labels[idx]).convert('L')
+            label = np.array(label)
+            label = (label > 0).astype(np.uint8)
             label = self.transform_label(label)
         return img, label
