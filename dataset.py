@@ -30,13 +30,25 @@ def read_masks(file_list):
 
 class PupilDataSetwithGT(Dataset):
     def __init__(self, data, transform = None, transform_label = None, mode = 'train'):
-        self.data = natsorted(data)
+        self.data = data
         self.transform = transform
         self.transform_label = transform_label
         self.mode = mode
-        self.labels = [im for im in self.data if im.endswith('png')]
-        self.images = [im for im in self.data if im.endswith('jpg')]
-        self.labels = read_masks(self.labels)
+        labels_name = [im for im in self.data if im.endswith('png')]
+        labels_name = natsorted(labels_name)
+        images_name = [im for im in self.data if im.endswith('jpg')]
+        images_name = natsorted(images_name)
+        self.labels = []
+        self.images = []
+        for i in range(len(labels_name)):
+            img = Image.open(labels_name[i]).convert('L')
+            img = np.array(img)
+            if np.sum(img.flatten()) != 0:
+                self.labels.append(labels_name[i])
+                self.images.append(images_name[i])
+        del labels_name, images_name
+        if mode != 'test':
+            self.labels = read_masks(self.labels)
         # This is only a naive way to separate training images and validation images, feel free to modify it.
         sep = 5
         if self.mode == 'train':
