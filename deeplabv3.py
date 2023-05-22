@@ -76,25 +76,23 @@ deeplabv3 = torch.hub.load("pytorch/vision:v0.10.0", "deeplabv3_resnet50", pretr
 
 # Freeze the ResNet backbone, comment this for-loop if we want to train the whole network
 for name, param in deeplabv3.named_parameters():
-    if 'backbone' in name:
+    if "backbone" in name:
         param.requires_grad = False
 
 deeplabv3.classifier[4] = nn.Conv2d(256, 2, kernel_size=(1, 1), stride=(1, 1))
 deeplabv3 = deeplabv3.to(device)
-
-# print(deeplabv3)
 
 optimizer = torch.optim.Adam(deeplabv3.parameters(), lr=config["lr"])
 criterion = torch.nn.CrossEntropyLoss(weight=torch.Tensor([0.2, 0.8]).to(device))
 
 wandb.init(project="Ganzin Pupil Tracking")
 
-for epoch in range(1, config["num_epochs"] + 1):
+for epoch in tqdm(range(1, config["num_epochs"] + 1)):
     deeplabv3.train()
     print(f"Epoch {epoch}/{config['num_epochs']}")
     train_loss = []
     val_loss = []
-    for img, label in pupil_trainloader:
+    for img, label in tqdm(pupil_trainloader, desc="Training"):
         img = img.to(device)
         label = label.to(device)
         output = deeplabv3(img)["out"]
@@ -109,7 +107,7 @@ for epoch in range(1, config["num_epochs"] + 1):
 
     deeplabv3.eval()
     with torch.no_grad():
-        for img, label in pupil_validloader:
+        for img, label in tqdm(pupil_trainloader, desc="Validation"):
             img = img.to(device)
             label = label.to(device)
             output = deeplabv3(img)["out"]
