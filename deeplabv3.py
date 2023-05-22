@@ -85,7 +85,7 @@ deeplabv3 = deeplabv3.to(device)
 # print(deeplabv3)
 
 optimizer = torch.optim.Adam(deeplabv3.parameters(), lr=config["lr"])
-criterion = torch.nn.CrossEntropyLoss()
+criterion = torch.nn.CrossEntropyLoss(weight=torch.Tensor([0.2, 0.8]).to(device))
 
 wandb.init(project="Ganzin Pupil Tracking")
 
