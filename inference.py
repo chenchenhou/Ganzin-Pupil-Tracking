@@ -28,8 +28,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="unet")
-    parser.add_argument("ckpt_path", help="Path to checkpoint.", type=str, required=True)
-    parser.add_argument("img_path", help="Path to testing img (only supports single image for now).", type=str, required=True)
+    parser.add_argument("--ckpt_path", help="Path to checkpoint.", type=str, required=True)
+    parser.add_argument("--img_path", help="Path to testing img (only supports single image for now).", type=str, required=True)
     return parser
 
 
