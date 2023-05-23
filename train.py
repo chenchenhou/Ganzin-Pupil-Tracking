@@ -27,11 +27,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="unet")
-    parser.add_argument("save_dir", help="Path to checkpoint directory.", type=str, default="./checkpoints/")
-    parser.add_argument("num_epochs", help="Number of training epochs.", type=int, default=30)
-    parser.add_argument("batch_size", help="Batch size.", type=int, default=32)
-    parser.add_argument("lr", help="Initial learning rate.", type=float, default=0.001)
+    parser.add_argument("--model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="unet")
+    parser.add_argument("--save_dir", help="Path to checkpoint directory.", type=str, default="./checkpoints/")
+    parser.add_argument("--num_epochs", help="Number of training epochs.", type=int, default=30)
+    parser.add_argument("--batch_size", help="Batch size.", type=int, default=32)
+    parser.add_argument("--lr", help="Initial learning rate.", type=float, default=0.001)
     return parser
 
 

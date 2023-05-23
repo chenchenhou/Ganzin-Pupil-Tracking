@@ -27,7 +27,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="unet")
+    parser.add_argument("--model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="unet")
     parser.add_argument("--ckpt_path", help="Path to checkpoint.", type=str, required=True)
     parser.add_argument("--img_path", help="Path to testing img (only supports single image for now).", type=str, required=True)
     return parser
@@ -76,7 +76,6 @@ label_map = {0: [0, 0, 0], 1: [255, 255, 255]}
 
 def draw_segmentation_map(outputs):
     labels = torch.argmax(outputs.squeeze().cpu(), dim=0).numpy()
-    print(labels)
     # Create 3 Numpy arrays containing zeros.
     # Later each pixel will be filled with respective red, green, and blue pixels
     # depending on the predicted class.
