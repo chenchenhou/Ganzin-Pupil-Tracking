@@ -27,15 +27,17 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("model", help="Choose which model to use (deeplabv3 or unet).", type=str, required=True)
-    parser.add_argument("save_dir", help="Path to checkpoint directory.", type=str, required=True)
+    parser.add_argument("model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="unet")
+    parser.add_argument("save_dir", help="Path to checkpoint directory.", type=str, default="./checkpoints/")
+    parser.add_argument("num_epochs", help="Number of training epochs.", type=int, default=30)
+    parser.add_argument("batch_size", help="Batch size.", type=int, default=32)
+    parser.add_argument("lr", help="Initial learning rate.", type=float, default=0.001)
     return parser
 
 
 parser = get_parser()
 args = parser.parse_args()
 model_name = args.model
-save_path = args.save_dir
 
 S1 = glob.glob("dataset/S1/**/*.png", recursive=True) + glob.glob("dataset/S1/**/*.jpg", recursive=True)
 S2 = glob.glob("dataset/S2/**/*.png", recursive=True) + glob.glob("dataset/S2/**/*.jpg", recursive=True)
@@ -70,7 +72,7 @@ pupil_valid_data = PupilDataSetwithGT(dataWithGT, transform=valid_transform, tra
 
 """# Configuration"""
 
-config = {"num_epochs": 30, "lr": 0.001, "batch_size": 4, "save_path": save_path}
+config = {"num_epochs": args.num_epochs, "lr": args.lr, "batch_size": args.batch_size, "save_path": args.save_dir}
 
 pupil_trainloader = DataLoader(pupil_train_data, batch_size=config["batch_size"], shuffle=True, drop_last=True)
 pupil_validloader = DataLoader(pupil_valid_data, batch_size=config["batch_size"], shuffle=False, drop_last=True)
