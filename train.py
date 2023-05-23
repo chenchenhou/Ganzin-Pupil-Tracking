@@ -131,6 +131,11 @@ for epoch in tqdm(range(1, config["num_epochs"] + 1)):
         print("Creating checkpoints directory...")
         os.mkdir(config["save_path"])
     if epoch % 10 == 0:
+        print(f"Saving {path_name}...")
         torch.save(model.state_dict(), os.path.join(config["save_path"], path_name))
+        if os.path.exists(os.path.join(config["save_path"], path_name)):
+            print(f"Checkpoint successfully saved!")
+        else:
+            print(f"Failed to save the model...")
 
 wandb.finish()
