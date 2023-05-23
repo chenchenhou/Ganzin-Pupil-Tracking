@@ -1,5 +1,4 @@
 import os
-import cv2
 import glob
 import torch
 import matplotlib
@@ -51,7 +50,7 @@ class PupilDataSetwithGT(Dataset):
         if self.mode == "test":
             label = -1
         else:
-            label = Image.open(self.labels[idx]).convert('L')
+            label = Image.open(self.labels[idx]).convert("L")
             label = np.array(label)
             label = (label > 0).astype(np.uint8)
             label = self.transform_label(label)

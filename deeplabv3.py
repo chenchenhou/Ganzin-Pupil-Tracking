@@ -22,7 +22,7 @@ torch.backends.cudnn.benchmark = False
 np.random.seed(myseed)
 torch.manual_seed(myseed)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+print(torch.cuda.is_available())
 
 """# Extracting data and Preprocessing
 ## Note that only S1 ~ S4 are provided with ground truth. Ground truth images are files that end with *.png*.
@@ -67,8 +67,8 @@ pupil_valid_data = PupilDataSetwithGT(dataWithGT, transform=valid_transform, tra
 
 config = {"num_epochs": 30, "lr": 0.001, "batch_size": 4, "save_path": "./checkpoints/"}
 
-pupil_trainloader = DataLoader(pupil_train_data, batch_size=config["batch_size"], shuffle=True)
-pupil_validloader = DataLoader(pupil_valid_data, batch_size=config["batch_size"], shuffle=False)
+pupil_trainloader = DataLoader(pupil_train_data, batch_size=config["batch_size"], shuffle=True, drop_last=True)
+pupil_validloader = DataLoader(pupil_valid_data, batch_size=config["batch_size"], shuffle=False, drop_last=True)
 
 """# Training and Validation"""
 # We can use different deeplabv3 architecture
