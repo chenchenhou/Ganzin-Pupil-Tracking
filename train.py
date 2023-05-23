@@ -14,7 +14,8 @@ from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from natsort import natsorted
 from dataset import PupilDataSetwithGT
-
+import argparse
+from Unet import Unet
 
 myseed = 777
 torch.backends.cudnn.deterministic = True
@@ -22,16 +23,20 @@ torch.backends.cudnn.benchmark = False
 np.random.seed(myseed)
 torch.manual_seed(myseed)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(torch.cuda.is_available())
 
-"""# Extracting data and Preprocessing
-## Note that only S1 ~ S4 are provided with ground truth. Ground truth images are files that end with *.png*.
-"""
 
-# Note that only S1 ~ S4 are provided with ground truth. Ground truth images are files that end with '.png'.
-# Maybe we can think about how to make use of unlabeled data (i.e., pseudo label).
-# For now, I only use those with gt.
-# Replace the path with your own path
+def get_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("model", help="Choose which model to use (deeplabv3 or unet).", type=str, required=True)
+    parser.add_argument("save_dir", help="Path to checkpoint directory.", type=str, required=True)
+    return parser
+
+
+parser = get_parser()
+args = parser.parse_args()
+model_name = args.model
+save_path = args.save_dir
+
 S1 = glob.glob("dataset/S1/**/*.png", recursive=True) + glob.glob("dataset/S1/**/*.jpg", recursive=True)
 S2 = glob.glob("dataset/S2/**/*.png", recursive=True) + glob.glob("dataset/S2/**/*.jpg", recursive=True)
 S3 = glob.glob("dataset/S3/**/*.png", recursive=True) + glob.glob("dataset/S3/**/*.jpg", recursive=True)
@@ -65,37 +70,39 @@ pupil_valid_data = PupilDataSetwithGT(dataWithGT, transform=valid_transform, tra
 
 """# Configuration"""
 
-config = {"num_epochs": 30, "lr": 0.001, "batch_size": 4, "save_path": "./checkpoints/"}
+config = {"num_epochs": 30, "lr": 0.001, "batch_size": 4, "save_path": save_path}
 
 pupil_trainloader = DataLoader(pupil_train_data, batch_size=config["batch_size"], shuffle=True, drop_last=True)
 pupil_validloader = DataLoader(pupil_valid_data, batch_size=config["batch_size"], shuffle=False, drop_last=True)
 
-"""# Training and Validation"""
-# We can use different deeplabv3 architecture
-deeplabv3 = torch.hub.load("pytorch/vision:v0.10.0", "deeplabv3_resnet50", pretrained=True)
+if model_name == "unet":
+    model = Unet()
+    model = model.to(device)
+elif model_name == "deeplabv3":
+    model = torch.hub.load("pytorch/vision:v0.10.0", "deeplabv3_resnet50", pretrained=True)
+    for name, param in model.named_parameters():
+        if "backbone" in name:
+            param.requires_grad = False
+    model.classifier[4] = nn.Conv2d(256, 2, kernel_size=(1, 1), stride=(1, 1))
+    model = model.to(device)
 
-# Freeze the ResNet backbone, comment this for-loop if we want to train the whole network
-for name, param in deeplabv3.named_parameters():
-    if "backbone" in name:
-        param.requires_grad = False
-
-deeplabv3.classifier[4] = nn.Conv2d(256, 2, kernel_size=(1, 1), stride=(1, 1))
-deeplabv3 = deeplabv3.to(device)
-
-optimizer = torch.optim.Adam(deeplabv3.parameters(), lr=config["lr"])
+optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
 criterion = torch.nn.CrossEntropyLoss(weight=torch.Tensor([0.2, 0.8]).to(device))
 
 wandb.init(project="Ganzin Pupil Tracking")
 
 for epoch in tqdm(range(1, config["num_epochs"] + 1)):
-    deeplabv3.train()
+    model.train()
     print(f"Epoch {epoch}/{config['num_epochs']}")
     train_loss = []
     val_loss = []
     for img, label in tqdm(pupil_trainloader, desc="Training"):
         img = img.to(device)
         label = label.to(device)
-        output = deeplabv3(img)["out"]
+        if model_name == "unet":
+            output = model(img)
+        elif model_name == "deeplabv3":
+            output = model(img)["out"]
         loss = criterion(output, torch.squeeze(label.long()))
         optimizer.zero_grad()
         loss.backward()
@@ -105,12 +112,15 @@ for epoch in tqdm(range(1, config["num_epochs"] + 1)):
     print(f"Training Loss = {train_avg_loss}")
     wandb.log({"Training Loss": train_avg_loss})
 
-    deeplabv3.eval()
+    model.eval()
     with torch.no_grad():
         for img, label in tqdm(pupil_trainloader, desc="Validation"):
             img = img.to(device)
             label = label.to(device)
-            output = deeplabv3(img)["out"]
+            if model_name == "unet":
+                output = model(img)
+            elif model_name == "deeplabv3":
+                output = model(img)["out"]
             loss = criterion(output, torch.squeeze(label.long()))
             val_loss.append(loss)
     val_avg_loss = sum(val_loss) / len(val_loss)
@@ -121,6 +131,6 @@ for epoch in tqdm(range(1, config["num_epochs"] + 1)):
         print("Creating checkpoints directory...")
         os.mkdir(config["save_path"])
     if epoch % 10 == 0:
-        torch.save(deeplabv3.state_dict(), os.path.join(config["save_path"], path_name))
+        torch.save(model.state_dict(), os.path.join(config["save_path"], path_name))
 
 wandb.finish()
