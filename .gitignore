@@ -1,3 +1,4 @@
 dataset/
 *.pdf
 .DS_Store
+*.pth
