@@ -16,6 +16,7 @@ from natsort import natsorted
 from dataset import PupilDataSetwithGT
 import argparse
 from Unet import Unet
+import torch.nn.functional as F
 
 myseed = 777
 torch.backends.cudnn.deterministic = True
@@ -41,7 +42,7 @@ ckpt_path = args.ckpt_path
 img_path = args.img_path
 
 if model_name == "unet":
-    model = Unet()
+    model = Unet(n_channels=1, n_classes=2)
     model.load_state_dict(torch.load(ckpt_path))
     model = model.to(device)
 elif model_name == "deeplabv3":
@@ -49,19 +50,21 @@ elif model_name == "deeplabv3":
     for name, param in model.named_parameters():
         if "backbone" in name:
             param.requires_grad = False
+    model.backbone.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
     model.classifier[4] = nn.Conv2d(256, 2, kernel_size=(1, 1), stride=(1, 1))
     model.load_state_dict(torch.load(ckpt_path))
     model = model.to(device)
+model.eval()
 
 valid_transform = transforms.Compose(
     [
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
 
-img = Image.open(img_path).convert("RGB")
+# img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+img = Image.open(img_path).convert("L")
 img = valid_transform(img)
 img = img.to(device)
 img = img.unsqueeze(0)
@@ -70,12 +73,12 @@ if model_name == "unet":
     output = model(img)
 elif model_name == "deeplabv3":
     output = model(img)["out"]
-
+output = F.softmax(output, dim=1).float()
 label_map = {0: [0, 0, 0], 1: [255, 255, 255]}
 
 
 def draw_segmentation_map(outputs):
-    labels = torch.argmax(outputs.squeeze().cpu(), dim=0).numpy()
+    labels = torch.argmax(output.squeeze().cpu(), dim=0).numpy()
     # Create 3 Numpy arrays containing zeros.
     # Later each pixel will be filled with respective red, green, and blue pixels
     # depending on the predicted class.
@@ -94,6 +97,5 @@ def draw_segmentation_map(outputs):
 
 
 mask = draw_segmentation_map(output)
-
 fig = Image.fromarray(mask)
-fig.save("./test.png")
+fig.save("test.png")

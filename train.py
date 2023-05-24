@@ -16,6 +16,8 @@ from natsort import natsorted
 from dataset import PupilDataSetwithGT
 import argparse
 from Unet import Unet
+from dice_loss import dice_loss
+import torch.nn.functional as F
 
 myseed = 777
 torch.backends.cudnn.deterministic = True
@@ -30,8 +32,8 @@ def get_parser():
     parser.add_argument("--model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="unet")
     parser.add_argument("--save_dir", help="Path to checkpoint directory.", type=str, default="./checkpoints/")
     parser.add_argument("--num_epochs", help="Number of training epochs.", type=int, default=30)
-    parser.add_argument("--batch_size", help="Batch size.", type=int, default=32)
-    parser.add_argument("--lr", help="Initial learning rate.", type=float, default=0.001)
+    parser.add_argument("--batch_size", help="Batch size.", type=int, default=16)
+    parser.add_argument("--lr", help="Initial learning rate.", type=float, default=0.0001)
     return parser
 
 
@@ -50,14 +52,14 @@ train_transform = transforms.Compose(
     [
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
 valid_transform = transforms.Compose(
     [
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
 transform_label = transforms.Compose(
@@ -78,18 +80,19 @@ pupil_trainloader = DataLoader(pupil_train_data, batch_size=config["batch_size"]
 pupil_validloader = DataLoader(pupil_valid_data, batch_size=config["batch_size"], shuffle=False, drop_last=True)
 
 if model_name == "unet":
-    model = Unet()
+    model = Unet(n_channels=1, n_classes=2)
     model = model.to(device)
 elif model_name == "deeplabv3":
     model = torch.hub.load("pytorch/vision:v0.10.0", "deeplabv3_resnet50", pretrained=True)
     for name, param in model.named_parameters():
         if "backbone" in name:
             param.requires_grad = False
+    model.backbone.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
     model.classifier[4] = nn.Conv2d(256, 2, kernel_size=(1, 1), stride=(1, 1))
     model = model.to(device)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
-criterion = torch.nn.CrossEntropyLoss(weight=torch.Tensor([0.2, 0.8]).to(device))
+optimizer = torch.optim.RMSprop(model.parameters(), lr=config["lr"])
+criterion = nn.CrossEntropyLoss(weight=torch.Tensor([0.3, 0.7]).to(device))
 
 wandb.init(project="Ganzin Pupil Tracking")
 
@@ -99,13 +102,14 @@ for epoch in tqdm(range(1, config["num_epochs"] + 1)):
     train_loss = []
     val_loss = []
     for img, label in tqdm(pupil_trainloader, desc="Training"):
-        img = img.to(device)
-        label = label.to(device)
+        img = img.to(device, memory_format=torch.channels_last)
+        label = label.to(device, dtype=torch.long)
         if model_name == "unet":
             output = model(img)
         elif model_name == "deeplabv3":
             output = model(img)["out"]
-        loss = criterion(output, torch.squeeze(label.long()))
+        loss = criterion(output, torch.squeeze(label))
+        loss = dice_loss(F.softmax(output, dim=1).float(), F.one_hot(label, 2).squeeze().permute(0, 3, 1, 2).float(), multiclass=True)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -116,15 +120,16 @@ for epoch in tqdm(range(1, config["num_epochs"] + 1)):
 
     model.eval()
     with torch.no_grad():
-        for img, label in tqdm(pupil_trainloader, desc="Validation"):
-            img = img.to(device)
-            label = label.to(device)
+        for img, label in tqdm(pupil_validloader, desc="Validation"):
+            img = img.to(device, memory_format=torch.channels_last)
+            label = label.to(device, dtype=torch.long)
             if model_name == "unet":
                 output = model(img)
             elif model_name == "deeplabv3":
                 output = model(img)["out"]
-            loss = criterion(output, torch.squeeze(label.long()))
-            val_loss.append(loss)
+            loss = criterion(output, torch.squeeze(label))
+            loss += dice_loss(F.softmax(output, dim=1).float(), F.one_hot(label, 2).squeeze().permute(0, 3, 1, 2).float(), multiclass=True)
+            val_loss.append(loss.item())
     val_avg_loss = sum(val_loss) / len(val_loss)
     print(f"Validation Loss = {val_avg_loss}")
     wandb.log({"Validation Loss": val_avg_loss})
@@ -132,7 +137,7 @@ for epoch in tqdm(range(1, config["num_epochs"] + 1)):
     if os.path.exists(config["save_path"]) == False:
         print("Creating checkpoints directory...")
         os.mkdir(config["save_path"])
-    if epoch % 10 == 0:
+    if epoch % 5 == 0:
         print(f"Saving {path_name}...")
         torch.save(model.state_dict(), os.path.join(config["save_path"], path_name))
         if os.path.exists(os.path.join(config["save_path"], path_name)):

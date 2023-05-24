@@ -2,3 +2,6 @@ dataset/
 *.pdf
 .DS_Store
 *.pth
+test.py
+*.png
+*.jpg

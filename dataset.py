@@ -11,6 +11,7 @@ import torchvision.models as models
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from natsort import natsorted
+import imageio
 
 
 class PupilDataSetwithGT(Dataset):
@@ -19,19 +20,10 @@ class PupilDataSetwithGT(Dataset):
         self.transform = transform
         self.transform_label = transform_label
         self.mode = mode
-        labels_name = [im for im in self.data if im.endswith("png")]
-        labels_name = natsorted(labels_name)
-        images_name = [im for im in self.data if im.endswith("jpg")]
-        images_name = natsorted(images_name)
-        self.labels = []
-        self.images = []
-        for i in range(len(labels_name)):
-            img = Image.open(labels_name[i]).convert("L")
-            img = np.array(img)
-            if np.sum(img.flatten()) != 0:
-                self.labels.append(labels_name[i])
-                self.images.append(images_name[i])
-        del labels_name, images_name
+        self.labels = [im for im in self.data if im.endswith("png")]
+        self.labels = natsorted(self.labels)
+        self.images = [im for im in self.data if im.endswith("jpg")]
+        self.images = natsorted(self.images)
         # This is only a naive way to separate training images and validation images, feel free to modify it.
         sep = 5
         if self.mode == "train":
@@ -45,7 +37,7 @@ class PupilDataSetwithGT(Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
-        img = Image.open(self.images[idx]).convert("RGB")
+        img = Image.open(self.images[idx]).convert("L")
         img = self.transform(img)
         if self.mode == "test":
             label = -1
@@ -54,4 +46,5 @@ class PupilDataSetwithGT(Dataset):
             label = np.array(label)
             label = (label > 0).astype(np.uint8)
             label = self.transform_label(label)
+            label = (label > 0).to(torch.int)
         return img, label
