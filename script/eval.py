@@ -61,17 +61,17 @@ def benchmark(dataset_path: str, subjects: list):
     sequence_idx = 0
     for subject in subjects:
         for action_number in range(26):
-            image_folder = os.path.join(dataset_path, subject, f'{action_number + 1:02d}')
+            image_folder = os.path.join(dataset_path, subject, f"{action_number + 1:02d}")
             sequence_idx += 1
-            nr_image = len([name for name in os.listdir(image_folder) if name.endswith('.jpg')])
+            nr_image = len([name for name in os.listdir(image_folder) if name.endswith(".jpg")])
             iou_meter_sequence.reset()
-            label_name = os.path.join(image_folder, '0.png')
+            label_name = os.path.join(image_folder, "0.png")
             if not os.path.exists(label_name):
-                print(f'Labels are not available for {image_folder}')
+                print(f"Labels are not available for {image_folder}")
                 continue
-            for idx in tqdm(range(nr_image), desc=f'[{sequence_idx:03d}] {image_folder}'):
-                image_name = os.path.join(image_folder, f'{idx}.jpg')
-                label_name = os.path.join(image_folder, f'{idx}.png')
+            for idx in tqdm(range(nr_image), desc=f"[{sequence_idx:03d}] {image_folder}"):
+                image_name = os.path.join(image_folder, f"{idx}.jpg")
+                label_name = os.path.join(image_folder, f"{idx}.png")
                 image = cv2.imread(image_name)
                 label = cv2.imread(label_name)
                 # TODO: Modify the code below to run your method or load your results from disk
@@ -91,14 +91,14 @@ def benchmark(dataset_path: str, subjects: list):
     wiou = iou_meter.avg()
     atnr = np.mean(tn_rates)
     score = 0.7 * wiou + 0.3 * atnr
-    print(f'\n\nOverall weighted IoU: {wiou:.4f}')
-    print(f'Average true negative rate: {atnr:.4f}')
-    print(f'Benchmark score: {score:.4f}')
+    print(f"\n\nOverall weighted IoU: {wiou:.4f}")
+    print(f"Average true negative rate: {atnr:.4f}")
+    print(f"Benchmark score: {score:.4f}")
 
     return score
 
 
-if __name__ == '__main__':
-    dataset_path = r'D:\CV23_Ganzin_final_project\dataset\public'
-    subjects = ['S1', 'S2', 'S3', 'S4']
+if __name__ == "__main__":
+    dataset_path = r"D:\CV23_Ganzin_final_project\dataset\public"
+    subjects = ["S1", "S2", "S3", "S4"]
     benchmark(dataset_path, subjects)

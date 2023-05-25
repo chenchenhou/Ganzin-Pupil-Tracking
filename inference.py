@@ -17,7 +17,7 @@ from dataset import PupilDataSet
 import argparse
 from Unet import Unet
 import torch.nn.functional as F
-from utils import draw_segmentation_map
+from postprocess import draw_segmentation_map
 
 
 myseed = 777
