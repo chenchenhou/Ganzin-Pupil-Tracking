@@ -13,10 +13,12 @@ import torchvision.models as models
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from natsort import natsorted
-from dataset import PupilDataSetwithGT
+from dataset import PupilDataSet
 import argparse
 from Unet import Unet
 import torch.nn.functional as F
+from utils import draw_segmentation_map
+
 
 myseed = 777
 torch.backends.cudnn.deterministic = True
@@ -29,8 +31,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="unet")
+    parser.add_argument("--result_dir", help="Path to result directory.", type=str, default="./solution/")
     parser.add_argument("--ckpt_path", help="Path to checkpoint.", type=str, required=True)
-    parser.add_argument("--img_path", help="Path to testing img (only supports single image for now).", type=str, required=True)
+    parser.add_argument("--img_dir", help="Path to testing images directory (i.e., S5).", type=str, required=True)
     return parser
 
 
@@ -39,7 +42,20 @@ args = parser.parse_args()
 
 model_name = args.model
 ckpt_path = args.ckpt_path
-img_path = args.img_path
+img_dir = args.img_dir
+result_dir = args.result_dir
+
+if not os.path.exists(result_dir):
+    print("Creating result directory...")
+    os.mkdir(result_dir)
+subject = img_dir.split("/")[-1]
+if not os.path.exists(os.path.join(result_dir, subject)):
+    os.mkdir(os.path.join(result_dir, subject))
+
+subfolders = os.listdir(img_dir)
+subfolders = natsorted(subfolders)
+
+label_map = {0: [0, 0, 0], 1: [255, 255, 255]}
 
 if model_name == "unet":
     model = Unet(n_channels=1, n_classes=2)
@@ -54,8 +70,8 @@ elif model_name == "deeplabv3":
     model.classifier[4] = nn.Conv2d(256, 2, kernel_size=(1, 1), stride=(1, 1))
     model.load_state_dict(torch.load(ckpt_path))
     model = model.to(device)
-model.eval()
 
+model.eval()
 valid_transform = transforms.Compose(
     [
         transforms.Resize((224, 224)),
@@ -63,39 +79,47 @@ valid_transform = transforms.Compose(
     ]
 )
 
+
+for sub in subfolders:
+    if not os.path.exists(os.path.join(result_dir, subject, sub)):
+        print(f"Creating subfolder {sub} in result directory...")
+        os.mkdir(os.path.join(result_dir, subject, sub))
+    data = glob.glob(os.path.join(img_dir, sub, "*.jpg"), recursive=True)
+    test_dataset = PupilDataSet(data, transform=valid_transform, mode="test")
+    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+    with torch.no_grad():
+        for i, img in enumerate(test_loader):
+            print(f"Processing {i}.jpg ...")
+            img = img.to(device)
+            if model_name == "unet":
+                output = model(img)
+            elif model_name == "deeplabv3":
+                output = model(img)["out"]
+            output = F.softmax(output, dim=1).float()
+            pred = torch.argmax(output.squeeze().cpu(), dim=0).numpy()
+            mask = draw_segmentation_map(output, label_map)
+            if 1 in pred:
+                conf = 1
+            else:
+                conf = 0
+            conf_path = os.path.join(result_dir, subject, sub, "conf.txt")
+            with open(conf_path, "a") as file:
+                file.write(str(conf) + "\n")
+            fig = Image.fromarray(mask)
+            fig = fig.resize((640, 480))
+            fig_save_path = os.path.join(result_dir, subject, sub, str(i) + ".png")
+            fig.save(fig_save_path)
 # img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-img = Image.open(img_path).convert("L")
-img = valid_transform(img)
-img = img.to(device)
-img = img.unsqueeze(0)
-
-if model_name == "unet":
-    output = model(img)
-elif model_name == "deeplabv3":
-    output = model(img)["out"]
-output = F.softmax(output, dim=1).float()
-label_map = {0: [0, 0, 0], 1: [255, 255, 255]}
+# img = Image.open(img_path).convert("L")
+# img = valid_transform(img)
+# img = img.to(device)
+# img = img.unsqueeze(0)
 
 
-def draw_segmentation_map(outputs):
-    labels = torch.argmax(output.squeeze().cpu(), dim=0).numpy()
-    # Create 3 Numpy arrays containing zeros.
-    # Later each pixel will be filled with respective red, green, and blue pixels
-    # depending on the predicted class.
-
-    R_map = np.zeros_like(labels).astype(np.uint8)
-    G_map = np.zeros_like(labels).astype(np.uint8)
-    B_map = np.zeros_like(labels).astype(np.uint8)
-    for label_num in range(0, len(label_map.keys())):
-        index = labels == label_num
-        R_map[index] = label_map[label_num][0]
-        G_map[index] = label_map[label_num][1]
-        B_map[index] = label_map[label_num][2]
-
-    segmentation_map = np.stack([R_map, G_map, B_map], axis=2)
-    return segmentation_map
+# output = F.softmax(output, dim=1).float()
 
 
-mask = draw_segmentation_map(output)
-fig = Image.fromarray(mask)
-fig.save("test.png")
+# mask = draw_segmentation_map(output)
+# fig = Image.fromarray(mask)
+# fig = fig.resize((640, 480))
+# fig.save("test.png")
