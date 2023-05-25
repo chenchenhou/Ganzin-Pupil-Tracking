@@ -109,17 +109,3 @@ for sub in subfolders:
             fig = fig.resize((640, 480))
             fig_save_path = os.path.join(result_dir, subject, sub, str(i) + ".png")
             fig.save(fig_save_path)
-# img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-# img = Image.open(img_path).convert("L")
-# img = valid_transform(img)
-# img = img.to(device)
-# img = img.unsqueeze(0)
-
-
-# output = F.softmax(output, dim=1).float()
-
-
-# mask = draw_segmentation_map(output)
-# fig = Image.fromarray(mask)
-# fig = fig.resize((640, 480))
-# fig.save("test.png")
