@@ -13,7 +13,7 @@ import torchvision.models as models
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from natsort import natsorted
-from dataset import PupilDataSetwithGT
+from dataset import PupilDataSet
 import argparse
 from Unet import Unet
 from dice_loss import dice_loss

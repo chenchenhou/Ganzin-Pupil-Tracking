@@ -14,7 +14,7 @@ from natsort import natsorted
 import imageio
 
 
-class PupilDataSetwithGT(Dataset):
+class PupilDataSet(Dataset):
     def __init__(self, data, transform=None, transform_label=None, mode="train"):
         self.data = data
         self.transform = transform
@@ -40,11 +40,12 @@ class PupilDataSetwithGT(Dataset):
         img = Image.open(self.images[idx]).convert("L")
         img = self.transform(img)
         if self.mode == "test":
-            label = -1
-        else:
-            label = Image.open(self.labels[idx]).convert("L")
-            label = np.array(label)
-            label = (label > 0).astype(np.uint8)
-            label = self.transform_label(label)
-            label = (label > 0).to(torch.int)
+            # img_name = self.images[idx].split("/")[-1]
+            return img
+
+        label = Image.open(self.labels[idx]).convert("L")
+        label = np.array(label)
+        label = (label > 0).astype(np.uint8)
+        label = self.transform_label(label)
+        label = (label > 0).to(torch.int)
         return img, label
