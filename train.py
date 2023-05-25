@@ -69,8 +69,8 @@ transform_label = transforms.Compose(
         transforms.ToTensor(),
     ]
 )
-pupil_train_data = PupilDataSetwithGT(dataWithGT, transform=train_transform, transform_label=transform_label)
-pupil_valid_data = PupilDataSetwithGT(dataWithGT, transform=valid_transform, transform_label=transform_label, mode="val")
+pupil_train_data = PupilDataSet(dataWithGT, transform=train_transform, transform_label=transform_label)
+pupil_valid_data = PupilDataSet(dataWithGT, transform=valid_transform, transform_label=transform_label, mode="val")
 
 """# Configuration"""
 
