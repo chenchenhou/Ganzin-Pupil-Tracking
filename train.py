@@ -18,6 +18,7 @@ import argparse
 from Unet import Unet
 from dice_loss import dice_loss
 import torch.nn.functional as F
+from postprocess import remove_eyebrow
 
 myseed = 777
 torch.backends.cudnn.deterministic = True
@@ -50,14 +51,12 @@ dataWithGT = S1 + S2 + S3 + S4
 # These transforms are meant for deeplabv3 in torchvision.models, feel free to modify them.
 train_transform = transforms.Compose(
     [
-        transforms.Resize((224, 224)),
         transforms.ToTensor(),
         # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
 valid_transform = transforms.Compose(
     [
-        transforms.Resize((224, 224)),
         transforms.ToTensor(),
         # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
@@ -65,7 +64,6 @@ valid_transform = transforms.Compose(
 transform_label = transforms.Compose(
     [
         transforms.ToPILImage(),
-        transforms.Resize((224, 224)),
         transforms.ToTensor(),
     ]
 )
