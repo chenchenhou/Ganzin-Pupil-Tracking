@@ -18,7 +18,7 @@ import argparse
 from Unet import Unet
 from dice_loss import dice_loss
 import torch.nn.functional as F
-from postprocess import remove_eyebrow
+
 
 myseed = 777
 torch.backends.cudnn.deterministic = True
@@ -30,9 +30,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="unet")
+    parser.add_argument("--model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="deeplabv3")
     parser.add_argument("--save_dir", help="Path to checkpoint directory.", type=str, default="./checkpoints/")
-    parser.add_argument("--num_epochs", help="Number of training epochs.", type=int, default=30)
+    parser.add_argument("--num_epochs", help="Number of training epochs.", type=int, default=35)
     parser.add_argument("--batch_size", help="Batch size.", type=int, default=16)
     parser.add_argument("--lr", help="Initial learning rate.", type=float, default=0.0001)
     return parser
@@ -52,13 +52,11 @@ dataWithGT = S1 + S2 + S3 + S4
 train_transform = transforms.Compose(
     [
         transforms.ToTensor(),
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
 valid_transform = transforms.Compose(
     [
         transforms.ToTensor(),
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
 transform_label = transforms.Compose(
