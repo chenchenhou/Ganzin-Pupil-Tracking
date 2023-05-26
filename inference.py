@@ -17,7 +17,7 @@ from dataset import PupilDataSet
 import argparse
 from Unet import Unet
 import torch.nn.functional as F
-from postprocess import draw_segmentation_map
+from postprocess import draw_segmentation_map, connected_components
 
 
 myseed = 777
@@ -79,7 +79,6 @@ valid_transform = transforms.Compose(
     ]
 )
 
-
 for sub in subfolders:
     if not os.path.exists(os.path.join(result_dir, subject, sub)):
         print(f"Creating subfolder {sub} in result directory...")
@@ -91,17 +90,22 @@ for sub in subfolders:
         for i, img in enumerate(test_loader):
             print(f"Processing {i}.jpg ...")
             img = img.to(device)
+
             if model_name == "unet":
                 output = model(img)
             elif model_name == "deeplabv3":
                 output = model(img)["out"]
+
             output = F.softmax(output, dim=1).float()
             pred = torch.argmax(output.squeeze().cpu(), dim=0).numpy()
-            mask = draw_segmentation_map(output, label_map)
+            cleaned_pred = connected_components(pred, threshold=1500)
+            mask = draw_segmentation_map(cleaned_pred, label_map)
+
             if 1 in pred:
                 conf = 1
             else:
                 conf = 0
+
             conf_path = os.path.join(result_dir, subject, sub, "conf.txt")
             with open(conf_path, "a") as file:
                 file.write(str(conf) + "\n")
@@ -109,6 +113,7 @@ for sub in subfolders:
             fig = fig.resize((640, 480))
             fig_save_path = os.path.join(result_dir, subject, sub, str(i) + ".png")
             fig.save(fig_save_path)
+
 # img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
 # img = Image.open(img_path).convert("L")
 # img = valid_transform(img)

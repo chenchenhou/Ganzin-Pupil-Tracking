@@ -133,6 +133,7 @@ for epoch in tqdm(range(1, config["num_epochs"] + 1)):
     val_avg_loss = sum(val_loss) / len(val_loss)
     print(f"Validation Loss = {val_avg_loss}")
     wandb.log({"Validation Loss": val_avg_loss})
+
     path_name = f"epoch{epoch}.pth"
     if os.path.exists(config["save_path"]) == False:
         print("Creating checkpoints directory...")
