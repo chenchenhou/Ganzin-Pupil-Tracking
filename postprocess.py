@@ -82,3 +82,27 @@ def find_pupil(mask):
         mask[yy, xx] = 0
 
     return mask
+
+
+def remove_eyebrow(image):
+    # Convert image to grayscale
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Apply thresholding to separate eyebrow and pupil
+    _, binary_image = cv2.threshold(gray_image, 25, 255, cv2.THRESH_BINARY)
+
+    # Calculate mean intensity of eyebrow and pupil regions
+    mean_eyebrow_intensity = np.mean(gray_image[binary_image == 255])
+    mean_pupil_intensity = np.mean(gray_image[binary_image == 0])
+
+    # Calculate gamma value
+    gamma = np.log10(mean_eyebrow_intensity / mean_pupil_intensity)
+
+    # Apply power-law transformation
+    transformed_image = np.power(binary_image, gamma)
+
+    # Normalize and convert pixel values
+    transformed_image = cv2.normalize(transformed_image, None, 0, 255, cv2.NORM_MINMAX)
+    transformed_image = np.uint8(transformed_image)
+
+    return transformed_image
