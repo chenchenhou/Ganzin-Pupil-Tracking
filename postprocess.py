@@ -22,8 +22,10 @@ def draw_segmentation_map(outputs, label_map):
     return segmentation_map
 
 
-def is_ellipse(contour, threshold=0.7):
+def is_ellipse(contour, threshold=0.55):
     # Fit an ellipse to the contour
+    if contour.shape[0] < 5:
+        return False
     ellipse = cv2.fitEllipse(contour)
     _, (axes), _ = ellipse
 
@@ -34,7 +36,6 @@ def is_ellipse(contour, threshold=0.7):
     # Calculate eccentricity
     eccentricity = minor_axis / major_axis
     print(eccentricity)
-
     # Check if eccentricity suggests an ellipse
     if eccentricity > eccentricity_threshold:
         return True
@@ -53,6 +54,8 @@ def find_pupil(mask):
             not_pupil_masks.append(candidate)
 
     for c in not_pupil_masks:
+        if len(c.shape) < 2:
+            c = np.expand_dims(c, axis=0)
         c = np.transpose(c, (1, 0))
         xx, yy = np.meshgrid(c[0], c[1])
         mask[yy, xx] = 0
