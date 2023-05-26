@@ -30,7 +30,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="unet")
+    parser.add_argument("--model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="deeplabv3")
     parser.add_argument("--result_dir", help="Path to result directory.", type=str, default="./solution/")
     parser.add_argument("--ckpt_path", help="Path to checkpoint.", type=str, required=True)
     parser.add_argument("--img_dir", help="Path to testing images directory (i.e., S5).", type=str, required=True)
@@ -74,7 +74,7 @@ elif model_name == "deeplabv3":
 model.eval()
 valid_transform = transforms.Compose(
     [
-        transforms.Resize((224, 224)),
+        # transforms.Resize((224, 224)),
         transforms.ToTensor(),
     ]
 )
@@ -103,6 +103,7 @@ for sub in subfolders:
 
             if 1 in pred:
                 conf = 1
+                # mask = find_pupil(mask)
             else:
                 conf = 0
 
@@ -110,21 +111,6 @@ for sub in subfolders:
             with open(conf_path, "a") as file:
                 file.write(str(conf) + "\n")
             fig = Image.fromarray(mask)
-            fig = fig.resize((640, 480))
+            # fig = fig.resize((640, 480))
             fig_save_path = os.path.join(result_dir, subject, sub, str(i) + ".png")
             fig.save(fig_save_path)
-
-# img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-# img = Image.open(img_path).convert("L")
-# img = valid_transform(img)
-# img = img.to(device)
-# img = img.unsqueeze(0)
-
-
-# output = F.softmax(output, dim=1).float()
-
-
-# mask = draw_segmentation_map(output)
-# fig = Image.fromarray(mask)
-# fig = fig.resize((640, 480))
-# fig.save("test.png")

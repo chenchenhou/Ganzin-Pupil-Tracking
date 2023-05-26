@@ -40,3 +40,44 @@ def connected_components(pred: np.ndarray, threshold: int) -> np.ndarray:
     cleaned_pred = labels
 
     return cleaned_pred
+
+
+def is_ellipse(contour, threshold=0.55):
+    # Fit an ellipse to the contour
+    if contour.shape[0] < 5:
+        return False
+    ellipse = cv2.fitEllipse(contour)
+    _, (axes), _ = ellipse
+
+    minor_axis, major_axis = min(axes), max(axes)
+    # Define threshold for eccentricity
+    eccentricity_threshold = threshold
+
+    # Calculate eccentricity
+    eccentricity = minor_axis / major_axis
+    print(eccentricity)
+    # Check if eccentricity suggests an ellipse
+    if eccentricity > eccentricity_threshold:
+        return True
+    else:
+        return False
+
+
+def find_pupil(mask):
+    edges = cv2.Canny(mask, 30, 200)
+    contours, hierarchy = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    not_pupil_masks = []
+    for m in contours:
+        candidate = np.squeeze(m)
+        result = is_ellipse(candidate)
+        if not result:
+            not_pupil_masks.append(candidate)
+
+    for c in not_pupil_masks:
+        if len(c.shape) < 2:
+            c = np.expand_dims(c, axis=0)
+        c = np.transpose(c, (1, 0))
+        xx, yy = np.meshgrid(c[0], c[1])
+        mask[yy, xx] = 0
+
+    return mask
