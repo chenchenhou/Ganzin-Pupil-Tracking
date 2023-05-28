@@ -39,7 +39,6 @@ class PupilDataSet(Dataset):
 
     def __getitem__(self, idx):
         img = Image.open(self.images[idx]).convert("L")
-        img = cv2.imread(self.images[idx])
         img = self.transform(img)
         if self.mode == "test":
             # img_name = self.images[idx].split("/")[-1]
