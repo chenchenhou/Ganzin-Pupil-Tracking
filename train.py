@@ -19,6 +19,7 @@ from Unet import Unet
 from dice_loss import dice_loss
 import torch.nn.functional as F
 
+
 myseed = 777
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
@@ -29,9 +30,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="unet")
+    parser.add_argument("--model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="deeplabv3")
     parser.add_argument("--save_dir", help="Path to checkpoint directory.", type=str, default="./checkpoints/")
-    parser.add_argument("--num_epochs", help="Number of training epochs.", type=int, default=30)
+    parser.add_argument("--num_epochs", help="Number of training epochs.", type=int, default=35)
     parser.add_argument("--batch_size", help="Batch size.", type=int, default=16)
     parser.add_argument("--lr", help="Initial learning rate.", type=float, default=0.0001)
     return parser
@@ -50,22 +51,17 @@ dataWithGT = S1 + S2 + S3 + S4
 # These transforms are meant for deeplabv3 in torchvision.models, feel free to modify them.
 train_transform = transforms.Compose(
     [
-        transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
 valid_transform = transforms.Compose(
     [
-        transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 )
 transform_label = transforms.Compose(
     [
         transforms.ToPILImage(),
-        transforms.Resize((224, 224)),
         transforms.ToTensor(),
     ]
 )
@@ -133,6 +129,7 @@ for epoch in tqdm(range(1, config["num_epochs"] + 1)):
     val_avg_loss = sum(val_loss) / len(val_loss)
     print(f"Validation Loss = {val_avg_loss}")
     wandb.log({"Validation Loss": val_avg_loss})
+
     path_name = f"epoch{epoch}.pth"
     if os.path.exists(config["save_path"]) == False:
         print("Creating checkpoints directory...")

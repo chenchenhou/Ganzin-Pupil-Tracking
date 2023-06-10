@@ -11,7 +11,8 @@ import torchvision.models as models
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from natsort import natsorted
-import imageio
+from postprocess import remove_eyebrow
+import cv2
 
 
 class PupilDataSet(Dataset):
