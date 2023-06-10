@@ -11,6 +11,6 @@ def zip_directory(directory_path, zip_path):
 
 
 # Usage example
-directory_to_zip = "/home/yuchien/Ganzin-Pupil-Tracking/solution/"
+directory_to_zip = "./solution/"
 zip_file_path = "./solution.zip"
 zip_directory(directory_to_zip, zip_file_path)
