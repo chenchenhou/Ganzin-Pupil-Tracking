@@ -5,3 +5,5 @@ dataset/
 test.py
 *.png
 *.jpg
+wandb/
+script/

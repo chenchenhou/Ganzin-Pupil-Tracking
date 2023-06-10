@@ -27,7 +27,7 @@ def connected_components(pred: np.ndarray, threshold: int) -> np.ndarray:
     max_area, max_label = 0, -1
     background_color = 0
 
-    # Find the region with largest area (area has to be larget that threshold)
+    # Find the region with largest area (area has to be larger then threshold)
     for label in range(1, num_labels):
         area = stats[label, cv2.CC_STAT_AREA]
         if (area > max_area) and (area > threshold):
@@ -84,25 +84,14 @@ def find_pupil(mask):
     return mask
 
 
-def remove_eyebrow(image):
-    # Convert image to grayscale
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+def morphology(mask, kernel_size=11):
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+    img_erosion = cv2.erode(mask, kernel, iterations=1)
+    img_dilation = cv2.dilate(img_erosion, kernel, iterations=1)
 
-    # Apply thresholding to separate eyebrow and pupil
-    _, binary_image = cv2.threshold(gray_image, 25, 255, cv2.THRESH_BINARY)
+    return img_dilation
 
-    # Calculate mean intensity of eyebrow and pupil regions
-    mean_eyebrow_intensity = np.mean(gray_image[binary_image == 255])
-    mean_pupil_intensity = np.mean(gray_image[binary_image == 0])
 
-    # Calculate gamma value
-    gamma = np.log10(mean_eyebrow_intensity / mean_pupil_intensity)
-
-    # Apply power-law transformation
-    transformed_image = np.power(binary_image, gamma)
-
-    # Normalize and convert pixel values
-    transformed_image = cv2.normalize(transformed_image, None, 0, 255, cv2.NORM_MINMAX)
-    transformed_image = np.uint8(transformed_image)
-
-    return transformed_image
+def gamma_correction(img: np.array, gamma=0.5):
+    res = np.power(img, gamma)
+    return res

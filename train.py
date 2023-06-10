@@ -15,7 +15,6 @@ import torchvision.transforms as transforms
 from natsort import natsorted
 from dataset import PupilDataSet
 import argparse
-from Unet import Unet
 from dice_loss import dice_loss
 import torch.nn.functional as F
 
@@ -30,9 +29,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", help="Choose which model to use (deeplabv3 or unet).", type=str, default="deeplabv3")
     parser.add_argument("--save_dir", help="Path to checkpoint directory.", type=str, default="./checkpoints/")
-    parser.add_argument("--num_epochs", help="Number of training epochs.", type=int, default=35)
+    parser.add_argument("--num_epochs", help="Number of training epochs.", type=int, default=30)
     parser.add_argument("--batch_size", help="Batch size.", type=int, default=16)
     parser.add_argument("--lr", help="Initial learning rate.", type=float, default=0.0001)
     return parser
@@ -40,7 +38,7 @@ def get_parser():
 
 parser = get_parser()
 args = parser.parse_args()
-model_name = args.model
+
 
 S1 = glob.glob("dataset/S1/**/*.png", recursive=True) + glob.glob("dataset/S1/**/*.jpg", recursive=True)
 S2 = glob.glob("dataset/S2/**/*.png", recursive=True) + glob.glob("dataset/S2/**/*.jpg", recursive=True)
@@ -75,17 +73,14 @@ config = {"num_epochs": args.num_epochs, "lr": args.lr, "batch_size": args.batch
 pupil_trainloader = DataLoader(pupil_train_data, batch_size=config["batch_size"], shuffle=True, drop_last=True)
 pupil_validloader = DataLoader(pupil_valid_data, batch_size=config["batch_size"], shuffle=False, drop_last=True)
 
-if model_name == "unet":
-    model = Unet(n_channels=1, n_classes=2)
-    model = model.to(device)
-elif model_name == "deeplabv3":
-    model = torch.hub.load("pytorch/vision:v0.10.0", "deeplabv3_resnet50", pretrained=True)
-    for name, param in model.named_parameters():
-        if "backbone" in name:
-            param.requires_grad = False
-    model.backbone.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-    model.classifier[4] = nn.Conv2d(256, 2, kernel_size=(1, 1), stride=(1, 1))
-    model = model.to(device)
+
+model = torch.hub.load("pytorch/vision:v0.10.0", "deeplabv3_resnet101", pretrained=True)
+for name, param in model.named_parameters():
+    if "backbone" in name:
+        param.requires_grad = False
+model.backbone.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+model.classifier[4] = nn.Conv2d(256, 2, kernel_size=(1, 1), stride=(1, 1))
+model = model.to(device)
 
 optimizer = torch.optim.RMSprop(model.parameters(), lr=config["lr"])
 criterion = nn.CrossEntropyLoss(weight=torch.Tensor([0.3, 0.7]).to(device))
@@ -100,10 +95,7 @@ for epoch in tqdm(range(1, config["num_epochs"] + 1)):
     for img, label in tqdm(pupil_trainloader, desc="Training"):
         img = img.to(device, memory_format=torch.channels_last)
         label = label.to(device, dtype=torch.long)
-        if model_name == "unet":
-            output = model(img)
-        elif model_name == "deeplabv3":
-            output = model(img)["out"]
+        output = model(img)["out"]
         loss = criterion(output, torch.squeeze(label))
         loss = dice_loss(F.softmax(output, dim=1).float(), F.one_hot(label, 2).squeeze().permute(0, 3, 1, 2).float(), multiclass=True)
         optimizer.zero_grad()
@@ -119,10 +111,7 @@ for epoch in tqdm(range(1, config["num_epochs"] + 1)):
         for img, label in tqdm(pupil_validloader, desc="Validation"):
             img = img.to(device, memory_format=torch.channels_last)
             label = label.to(device, dtype=torch.long)
-            if model_name == "unet":
-                output = model(img)
-            elif model_name == "deeplabv3":
-                output = model(img)["out"]
+            output = model(img)["out"]
             loss = criterion(output, torch.squeeze(label))
             loss += dice_loss(F.softmax(output, dim=1).float(), F.one_hot(label, 2).squeeze().permute(0, 3, 1, 2).float(), multiclass=True)
             val_loss.append(loss.item())
