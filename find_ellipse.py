@@ -40,8 +40,8 @@ def find_ellipse(image, output_path):
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--MaskPath", help="Path to imcomplete output.", type=str, default="./solution/")
-    parser.add_argument("--SavePath", help="Path to the saving directory", type=str)
+    parser.add_argument("--MaskPath", help="Path to imcomplete output.", type=str, required=True)
+    parser.add_argument("--SavePath", help="Path to the saving directory", type=str, default='./solution')
     return parser
 
 
