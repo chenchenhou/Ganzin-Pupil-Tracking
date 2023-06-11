@@ -6,4 +6,4 @@ Instructor: Prof. Shao-Yi Chien
 
 ## Quick Start
 
-1. Install
+1. Install dependencies
