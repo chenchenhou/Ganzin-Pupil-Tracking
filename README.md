@@ -47,7 +47,7 @@ bash inference.sh
 python merge.py
 ```
 
-5. Utilize SAM to incorporate the pupil masks into fully formed elliptical shapes.
+5. Incorporate the pupil masks into fully formed elliptical shapes.
 
 ```bash
 python find_ellipse.py
