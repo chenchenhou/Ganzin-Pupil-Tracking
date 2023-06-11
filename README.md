@@ -30,7 +30,8 @@ dataset
 ## Inference
 
 1. Download our pre-trained weights of DeepLabV3 [here](https://drive.google.com/drive/folders/1hMi-NeT1JfuIAxB2KHboP0lQusQS8gCa?usp=share_link).
-2. Run the inference script by entering the following command:
+2. Create ./checkpoints/ directory and put the pre-trained weight in it.
+3. Run the inference script by entering the following command:
 
 ```bash
 bash inference.sh
