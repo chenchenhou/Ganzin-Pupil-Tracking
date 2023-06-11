@@ -1,0 +1,10 @@
+git+https://github.com/facebookresearch/segment-anything.git
+opencv-python
+natsort
+torch
+numpy
+tqdm
+matplotlib
+torchvision
+wandb
+zipfile36
