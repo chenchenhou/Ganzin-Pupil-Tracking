@@ -12,7 +12,7 @@ Instructor: Prof. Shao-Yi Chien
 pip install -r requirements.txt
 ```
 
-2. Download the data and organize them to the following structure.
+2. Download the data arrange it according to the following structure.
 
 ```bash
 dataset
