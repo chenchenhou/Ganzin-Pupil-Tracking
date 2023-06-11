@@ -7,3 +7,6 @@ test.py
 *.jpg
 wandb/
 script/
+.vscode
+__pycache__
+wandb/
