@@ -8,11 +8,12 @@ from natsort import natsorted
 from PIL import Image
 import argparse
 
+
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--condidate_1", help="Path to first directory.", type=str, required=True)
-    parser.add_argument("--condidate_2", help="Path to second directory.", type=str, required=True)
-    parser.add_argument("--SavePath", help="Path to the saving directory", type=str, default='./solution')
+    parser.add_argument("--candidate_1", help="Path to first directory.", type=str, required=True)
+    parser.add_argument("--candidate_2", help="Path to second directory.", type=str, required=True)
+    parser.add_argument("--SavePath", help="Path to the saving directory", type=str, default="./solution_merge/")
     return parser
 
 
@@ -20,15 +21,15 @@ parser = get_parser()
 args = parser.parse_args()
 
 
-condidate_1 = args.condidate_1
-condidate_2 = args.condidate_2
+candidate_1 = args.candidate_1
+candidate_2 = args.candidate_2
 SavePath = args.SavePath
 subject = ["S5", "S6", "S7", "S8"]
 
 
 for sub in subject:
-    SAM_folder_path = natsorted(glob.glob(os.path.join(condidate_1, sub, "*")))  # /home/yuchien/Ganzin-Pupil-Tracking/dataset/S5/01~..
-    deep_folder_path = natsorted(glob.glob(os.path.join(condidate_2, sub, "*")))
+    SAM_folder_path = natsorted(glob.glob(os.path.join(candidate_1, sub, "*")))  # /home/yuchien/Ganzin-Pupil-Tracking/dataset/S5/01~..
+    deep_folder_path = natsorted(glob.glob(os.path.join(candidate_2, sub, "*")))
     num_of_folder = len(SAM_folder_path)
 
     for i in range(num_of_folder):
