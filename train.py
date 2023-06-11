@@ -33,17 +33,18 @@ def get_parser():
     parser.add_argument("--num_epochs", help="Number of training epochs.", type=int, default=30)
     parser.add_argument("--batch_size", help="Batch size.", type=int, default=16)
     parser.add_argument("--lr", help="Initial learning rate.", type=float, default=0.0001)
+    parser.add_argument("--dataset", help="Path to dataset.", type=str, default="./dataset/")
     return parser
 
 
 parser = get_parser()
 args = parser.parse_args()
+data = args.dataset
 
-
-S1 = glob.glob("dataset/S1/**/*.png", recursive=True) + glob.glob("dataset/S1/**/*.jpg", recursive=True)
-S2 = glob.glob("dataset/S2/**/*.png", recursive=True) + glob.glob("dataset/S2/**/*.jpg", recursive=True)
-S3 = glob.glob("dataset/S3/**/*.png", recursive=True) + glob.glob("dataset/S3/**/*.jpg", recursive=True)
-S4 = glob.glob("dataset/S4/**/*.png", recursive=True) + glob.glob("dataset/S4/**/*.jpg", recursive=True)
+S1 = glob.glob(os.path.join(data, "S1/**/*.png"), recursive=True) + glob.glob(os.path.join(data, "S1/**/*.jpg"), recursive=True)
+S2 = glob.glob(os.path.join(data, "S2/**/*.png"), recursive=True) + glob.glob(os.path.join(data, "S2/**/*.jpg"), recursive=True)
+S3 = glob.glob(os.path.join(data, "S3/**/*.png"), recursive=True) + glob.glob(os.path.join(data, "S3/**/*.jpg"), recursive=True)
+S4 = glob.glob(os.path.join(data, "S4/**/*.png"), recursive=True) + glob.glob(os.path.join(data, "S4/**/*.jpg"), recursive=True)
 dataWithGT = S1 + S2 + S3 + S4
 
 # These transforms are meant for deeplabv3 in torchvision.models, feel free to modify them.
