@@ -9,7 +9,7 @@ Instructor: Prof. Shao-Yi Chien
 1. Install dependencies.
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirement.txt
 ```
 
 2. Download the data arrange it according to the following structure.
