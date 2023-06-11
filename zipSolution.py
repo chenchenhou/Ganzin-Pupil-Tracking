@@ -1,5 +1,20 @@
 import zipfile
 import os
+import argparse
+
+
+def get_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--solution_dir", help="Path to solution directory.", type=str, default="./solution/")
+    parser.add_argument("--zip_file", help="Path to result zip file.", type=str, default="./solution.zip")
+    return parser
+
+
+parser = get_parser()
+args = parser.parse_args()
+
+solution_dir = args.solution_dir
+zip_file = args.zip_file
 
 
 def zip_directory(directory_path, zip_path):
@@ -11,6 +26,4 @@ def zip_directory(directory_path, zip_path):
 
 
 # Usage example
-directory_to_zip = "./solution/"
-zip_file_path = "./solution.zip"
-zip_directory(directory_to_zip, zip_file_path)
+zip_directory(solution_dir, zip_file)

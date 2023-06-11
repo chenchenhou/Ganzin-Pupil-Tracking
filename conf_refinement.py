@@ -4,10 +4,21 @@ import os
 import glob
 from PIL import Image
 from natsort import natsorted
+import argparse
 
-masks = glob.glob("./solution/**/*.txt", recursive=True)
+
+def get_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--solution_dir", help="Path to solution directory.", type=str, default="./solution/")
+    return parser
+
+
+parser = get_parser()
+args = parser.parse_args()
+solution_dir = args.solution_dir
+masks = glob.glob(os.path.join(solution_dir, "**/*.txt"), recursive=True)
 masks = natsorted(masks)
-print(masks)
+# print(masks)
 
 
 for m in masks:

@@ -11,8 +11,8 @@ import argparse
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--candidate_1", help="Path to first directory.", type=str, required=True)
-    parser.add_argument("--candidate_2", help="Path to second directory.", type=str, required=True)
+    parser.add_argument("--candidate_1", help="Path to first directory.", type=str, default="./solution_original/")
+    parser.add_argument("--candidate_2", help="Path to second directory.", type=str, default="./solution_gamma/")
     parser.add_argument("--SavePath", help="Path to the saving directory", type=str, default="./solution_merge/")
     return parser
 

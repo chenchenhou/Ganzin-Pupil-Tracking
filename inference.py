@@ -15,7 +15,6 @@ import torchvision.transforms as transforms
 from natsort import natsorted
 from dataset import PupilDataSet
 import argparse
-from Unet import Unet
 import torch.nn.functional as F
 from postprocess import draw_segmentation_map, connected_components, gamma_correction
 
@@ -30,7 +29,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--result_dir", help="Path to result directory.", type=str, default="./solution/")
+    parser.add_argument("--result_dir", help="Path to result directory.", type=str, default="./solution_original/")
     parser.add_argument("--use_gamma", help="Whether to use gamma correction on input image", action="store_true")
     parser.add_argument("--area_ratio", help="ratio of average area of a sub-directory used as the threshold for connected component", type=float, default=0.3)
     parser.add_argument("--ckpt_path", help="Path to checkpoint.", type=str, required=True)
