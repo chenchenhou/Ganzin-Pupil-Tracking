@@ -66,3 +66,13 @@ python conf_refinement.py
 ```bash
 python zipSolution.py
 ```
+
+## Training
+
+1. To train our DeepLabV3, simply enter the following command:
+
+```bash
+python train.py
+```
+
+2. The training process will take about 6 ~ 8 hours. Once the training process is finished, it will generate model checkpoints in the ./checkpoints/ directory. Please use the last checkpoint to perform inference.
