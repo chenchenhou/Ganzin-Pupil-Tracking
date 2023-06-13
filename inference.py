@@ -17,6 +17,7 @@ from dataset import PupilDataSet
 import argparse
 import torch.nn.functional as F
 from postprocess import draw_segmentation_map, connected_components, gamma_correction
+from find_ellipse import check_for_nan, ellipse_complete
 
 
 myseed = 777
@@ -29,7 +30,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--result_dir", help="Path to result directory.", type=str, default="./solution_original/")
+    parser.add_argument("--result_dir", help="Path to result directory.", type=str, default="./solution/")
     parser.add_argument("--use_gamma", help="Whether to use gamma correction on input image", action="store_true")
     parser.add_argument("--area_ratio", help="ratio of average area of a sub-directory used as the threshold for connected component", type=float, default=0.3)
     parser.add_argument("--ckpt_path", help="Path to checkpoint.", type=str, required=True)
@@ -87,11 +88,11 @@ for sub in subfolders:
     preds = []
     with torch.no_grad():
         for i, img in enumerate(test_loader):
-            print(f"Processing {i}.jpg ...")
+            # print(f"Processing {i}.jpg ...")
 
             # enhance image
             if use_gamma:
-                print("Enhancing input image with gamma correction...")
+                # print("Enhancing input image with gamma correction...")
                 img = img.detach().cpu().numpy()
                 img = gamma_correction(img)
                 img = torch.from_numpy(img)
@@ -109,7 +110,13 @@ for sub in subfolders:
     avg_area = area_ratio * avg_area
     for i, p in enumerate(preds):
         print(f"Finetuning {i}.jpg with threshold area = {avg_area}")
-        cleaned_pred = connected_components(p, threshold=int(avg_area))
+        if use_gamma != True:
+            cleaned_pred = ellipse_complete(p)
+            cleaned_pred = cleaned_pred / 255
+            cleaned_pred = connected_components(cleaned_pred, threshold=int(avg_area))
+        else:
+            cleaned_pred = connected_components(p, threshold=int(avg_area))
+            
         mask = draw_segmentation_map(cleaned_pred, label_map)
 
         if 1 in cleaned_pred:
